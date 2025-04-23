@@ -177,6 +177,89 @@ app.post("/nd_view", async (req, res) => {
   }
 });
 
+app.post("/api/payments", async (req, res) => {
+  const email = req.cookies.userEmail;
+  const { amount } = req.body;
+
+  if (!email) return res.status(401).json({ error: "User not logged in." });
+  if (!amount || isNaN(amount) || amount <= 0) {
+    return res.status(400).json({ error: "Invalid payment amount." });
+  }
+
+  const selectSql = "SELECT balance FROM Users WHERE email = ?";
+  db.query(selectSql, [email], (err, results) => {
+    if (err) {
+      console.error("Database error:", err);
+      return res.status(500).json({ error: "Database error." });
+    }
+
+    if (results.length === 0) {
+      return res.status(404).json({ error: "User not found." });
+    }
+
+    const currentBalance = parseFloat(results[0].balance);
+    if (currentBalance < amount) {
+      return res.status(400).json({ error: "Insufficient balance." });
+    }
+
+    const newBalance = currentBalance - amount;
+
+    // Update balance
+    const updateSql = "UPDATE Users SET balance = ? WHERE email = ?";
+    db.query(updateSql, [newBalance, email], (updateErr) => {
+      if (updateErr) {
+        console.error("Error updating balance:", updateErr);
+        return res.status(500).json({ error: "Could not update balance." });
+      }
+
+      return res.status(200).json({
+        message: "Payment successful.",
+        newBalance: newBalance,
+      });
+    });
+  });
+});
+
+app.post("/api/transfer", async (req, res) => {
+  const email = req.cookies.userEmail;
+  const { amount } = req.body;
+
+  if (!email) return res.status(401).json({ error: "User not logged in." });
+  if (!amount || isNaN(amount) || amount <= 0) {
+    return res.status(400).json({ error: "Invalid transfer amount." });
+  }
+
+  // Fetch user's current balance
+  const selectSql = "SELECT balance FROM Users WHERE email = ?";
+  db.query(selectSql, [email], (err, results) => {
+    if (err) {
+      console.error("Database error:", err);
+      return res.status(500).json({ error: "Database error." });
+    }
+
+    if (results.length === 0) {
+      return res.status(404).json({ error: "User not found." });
+    }
+
+    const currentBalance = parseFloat(results[0].balance);
+    const newBalance = currentBalance + parseFloat(amount);
+
+    // Update user's balance
+    const updateSql = "UPDATE Users SET balance = ? WHERE email = ?";
+    db.query(updateSql, [newBalance, email], (updateErr) => {
+      if (updateErr) {
+        console.error("Error updating balance:", updateErr);
+        return res.status(500).json({ error: "Could not update balance." });
+      }
+
+      return res.status(200).json({
+        message: "Transfer successful.",
+        newBalance: newBalance,
+      });
+    });
+  });
+});
+
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
