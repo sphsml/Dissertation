@@ -1,13 +1,10 @@
-import React, { useState } from "react";
+import React, { useEffect } from "react";
 import { Chart } from "react-google-charts";
-import { Sidebar, Menu, MenuItem, SubMenu } from "react-pro-sidebar";
-import { Divider } from "@react-md/divider";
 import Layout from "./Layout";
 import "./components.css";
 
 export default function Savings() {
   const totalSaved = 5728.35;
-  const [showModal, setShowModal] = useState(false);
 
   const monthlySavings = [
     ["Month", "Amount Saved"],
@@ -36,6 +33,44 @@ export default function Savings() {
     "Interest rates have been updated.",
     "You have unread insights from your advisor.",
   ];
+
+  const speak = (text) => {
+    const utterance = new SpeechSynthesisUtterance(text);
+    speechSynthesis.cancel();
+    speechSynthesis.speak(utterance);
+  };
+
+  useEffect(() => {
+    speak("Welcome to your savings overview. Press 1 for overview, 2 for monthly contributions, 3 for savings by goal, or 4 for tips.");
+    const handleKeyDown = (e) => {
+      switch (e.key) {
+        case "1":
+          speak(`Total saved is £${totalSaved.toLocaleString()}`);
+          break;
+        case "2":
+          const monthly = monthlySavings
+            .slice(1)
+            .map(([month, amount]) => `${month}: £${amount}`)
+            .join(", ");
+          speak("Monthly Contributions: " + monthly);
+          break;
+        case "3":
+          const goals = savingsByGoal
+            .map((item) => `${item.goal}: £${item.amount.toLocaleString()}`)
+            .join(", ");
+          speak("Savings by Goal: " + goals);
+          break;
+        case "4":
+          speak("Tips: " + tips.join(" ... "));
+          break;
+        default:
+          break;
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   return (
     <Layout messages={messages}>

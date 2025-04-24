@@ -4,6 +4,7 @@ import { React, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Divider } from "@react-md/divider";
 import Layout from "./Layout"
+import { speak } from "../utils/speak";
 import { Chart } from "react-google-charts";
 
 const messages = [
@@ -65,6 +66,10 @@ const accessibility = [
 
 export default function Home() {
   useEffect(() => {
+    if(typeof window !== "undefined") {
+      window.speechSynthesis.onvoiceschanged = () => {
+        window.speechSynthesis.getVoices()};
+    }
     window.addEventListener("keydown", handleKeyDown);
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
@@ -114,32 +119,25 @@ export default function Home() {
   ];
   const [showModal, setShowModal] = useState(false);
   const [, setCurrentSectionIndex] = useState(0);
-  const speakText = (text) => {
-    if (!text) return;
-    const synth = window.speechSynthesis;
-    const utterance = new SpeechSynthesisUtterance(text);
-    synth.cancel(); // Stop any previous speech
-    synth.speak(utterance);
-  };
 
   const handleKeyDown = (event) => {
     if (event.key === "ArrowRight") {
       setCurrentSectionIndex((prevIndex) => {
         const newIndex = Math.min(prevIndex + 1, sections.length - 1);
-        speakText(sections[newIndex]);
+        speak(sections[newIndex]);
         return newIndex;
       });
     } else if (event.key === "ArrowLeft") {
       setCurrentSectionIndex((prevIndex) => {
         const newIndex = Math.max(prevIndex - 1, 0);
-        speakText(sections[newIndex]);
+        speak(sections[newIndex]);
         return newIndex;
       });
     } else if (event.key === "ArrowDown") {
       setCurrentSectionIndex((prevIndex) => {
         console.log(prevIndex);
         if (prevIndex > 0) {
-          speakText(subsections[prevIndex - 1]);
+          speak(subsections[prevIndex - 1]);
         }
         return prevIndex;
       });

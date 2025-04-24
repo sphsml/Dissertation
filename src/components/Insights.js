@@ -1,7 +1,9 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { speak } from "../utils/speak";
 import Layout from "./Layout";
 
 export default function Insights() {
+  const [currentIndex, setCurrentIndex] = useState(0);
   const messages = [
     "Welcome to your personalized investment insights.",
     "Explore different options based on your financial goals.",
@@ -40,6 +42,41 @@ export default function Insights() {
     },
   ];
 
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+        window.speechSynthesis.onvoiceschanged = () => {
+          window.speechSynthesis.getVoices();
+        };
+      }
+
+      speak(messages);
+    
+      const handleKeyDown = (event) => {
+        if (event.key === "ArrowRight") {
+          setCurrentIndex((prevIndex) => {
+            const newIndex = Math.min(prevIndex + 1, insights.length - 1);
+            speak(insights[newIndex].title);
+            return newIndex;
+          });
+        } else if (event.key === "ArrowLeft") {
+          setCurrentIndex((prevIndex) => {
+            const newIndex = Math.max(prevIndex - 1, 0);
+            speak(insights[newIndex].titile);
+            return newIndex;
+          });
+        } else if (event.key === "ArrowDown") {
+          setCurrentIndex((prevIndex) => {
+            const newIndex = Math.min(prevIndex + 1, insights.length - 1);
+            speak(insights[newIndex].description);
+            return newIndex;
+          });
+        }
+  };
+  window.addEventListener("keydown", handleKeyDown);
+  return () => {
+    window.removeEventListener("keydown", handleKeyDown);
+  };}, []);
+
   return (
     <Layout messages={messages}>
       <div className="main-home" style={{ padding: "1.5rem" }}>
@@ -48,7 +85,7 @@ export default function Insights() {
           <div
             key={index}
             style={{
-              backgroundColor: "#f9fafb",
+              backgroundColor: index === currentIndex ? "#dbeafe" : "#f9fafb",
               padding: "16px",
               marginBottom: "12px",
               borderRadius: "10px",

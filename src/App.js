@@ -9,6 +9,7 @@ import VISetup from './components/VISetup'
 import Savings from './components/Savings'
 import Payments from './components/Payments'
 import Insights from './components/Insights'
+import Settings from './components/Settings'
 
 function App() {
   return (
@@ -30,6 +31,7 @@ function App() {
         <Route path="/savings" element={<Savings/>} />
         <Route path="/payments" element={<Payments/>}/> 
         <Route path="/insights" element={<Insights/>}/> 
+        <Route path="/settings" element={<Settings/>} />
         </Routes>
       </div>
     </Router>

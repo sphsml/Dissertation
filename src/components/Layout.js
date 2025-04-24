@@ -55,7 +55,7 @@ export default function Layout({ children, messages }) {
             </MenuItem>
             <br />
             <Divider />
-            <MenuItem> Settings </MenuItem>
+            <MenuItem onClick={() => navigate("/settings")}> Settings </MenuItem>
             <div className="menu-spacer">
               <Divider />
               <MenuItem> Help </MenuItem>

@@ -276,7 +276,6 @@ app.post("/api/payments", async (req, res) => {
 
     const newBalance = currentBalance - amount;
 
-    // Update balance
     const updateSql = "UPDATE Users SET balance = ? WHERE email = ?";
     db.query(updateSql, [newBalance, email], (updateErr) => {
       if (updateErr) {
@@ -316,7 +315,6 @@ app.post("/api/transfer", async (req, res) => {
     const currentBalance = parseFloat(results[0].balance);
     const newBalance = currentBalance + parseFloat(amount);
 
-    // Update user's balance
     const updateSql = "UPDATE Users SET balance = ? WHERE email = ?";
     db.query(updateSql, [newBalance, email], (updateErr) => {
       if (updateErr) {
@@ -330,6 +328,62 @@ app.post("/api/transfer", async (req, res) => {
       });
     });
   });
+});
+
+app.post("/update-settings", async (req, res) => {
+  try {
+    const email = req.cookies.userEmail;
+    const { password, voice, pitch, rate, volume } = req.body;
+
+    if (!email) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    if (password) {
+      const sqlPassword = "UPDATE Users SET password = ? WHERE email = ?";
+      db.query(sqlPassword, [password, email], (err) => {
+        if (err) {
+          console.error("Password update failed:", err);
+          return res.status(500).json({ message: "Failed to update password" });
+        }
+      });
+    }
+
+    const sqlAccessibility =
+      "REPLACE INTO vi_view (email, voice, pitch, rate, volume) VALUES (?, ?, ?, ?, ?)";
+    db.query(
+      sqlAccessibility,
+      [email, voice, pitch, rate, volume],
+      (err) => {
+        if (err) {
+          console.error("Accessibility update failed:", err);
+          return res
+            .status(500)
+            .json({ message: "Failed to update accessibility preferences" });
+        }
+
+        res.cookie(
+          "accessibility",
+          JSON.stringify({
+            type: "vi",
+            data: { voice, pitch, rate, volume },
+          }),
+          {
+            httpOnly: true,
+            secure: false,
+            maxAge: 24 * 60 * 60 * 1000,
+          }
+        );
+
+        return res
+          .status(200)
+          .json({ message: "Settings updated successfully" });
+      }
+    );
+  } catch (err) {
+    console.error("Update settings error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
 });
 
 app.post("/logout", (req, res) => {
