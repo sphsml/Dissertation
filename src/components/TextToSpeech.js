@@ -107,12 +107,12 @@ const TextToSpeech = ({ textList }) => {
 
     setVoice(voices[newIndex]);
     setVoiceIndex(newIndex);
-    savePreferences();
   };
 
   const handleNextText = () => {
     setCurrentTextIndex((prevIndex) => (prevIndex + 1));
     if(currentTextIndex>textList.length) {
+        savePreferences();
         navigate("/Home");
     }
   }
@@ -172,17 +172,14 @@ const TextToSpeech = ({ textList }) => {
 
   const handlePitchChange  = (event) => {
     setPitch(parseFloat(event.target.value));
-    savePreferences();
   };
 
   const handleRateChange = (event) => {
     setRate(parseFloat(event.target.value));
-    savePreferences();
   };
 
   const handleVolumeChange = (event) => {
     setVolume(parseFloat(event.target.value));
-    savePreferences();
   };
 
   return (

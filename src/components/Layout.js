@@ -1,4 +1,4 @@
-import React, {useState} from "react";
+import React, { useState } from "react";
 import { Sidebar, Menu, MenuItem, SubMenu } from "react-pro-sidebar";
 import { Divider } from "@react-md/divider";
 import { useNavigate } from "react-router-dom";
@@ -45,8 +45,14 @@ export default function Layout({ children, messages }) {
               </span>
             </MenuItem>
             <MenuItem onClick={() => navigate("/savings")}> Savings </MenuItem>
-            <MenuItem> Insights </MenuItem>
-            <MenuItem> Payments </MenuItem>
+            <MenuItem onClick={() => navigate("/insights")}>
+              {" "}
+              Insights{" "}
+            </MenuItem>
+            <MenuItem onClick={() => navigate("/payments")}>
+              {" "}
+              Payments{" "}
+            </MenuItem>
             <br />
             <Divider />
             <MenuItem> Settings </MenuItem>
@@ -55,7 +61,22 @@ export default function Layout({ children, messages }) {
               <MenuItem> Help </MenuItem>
               <MenuItem> Contact Us </MenuItem>
               <br />
-              <MenuItem> Log Out </MenuItem>
+              <MenuItem
+                onClick={async () => {
+                  try {
+                    await fetch("http://localhost:4000/logout", {
+                      method: "POST",
+                      credentials: "include",
+                    });
+                    navigate("/home");
+                  } catch (error) {
+                    console.error("Logout failed:", error);
+                  }
+                }}
+              >
+                {" "}
+                Log Out{" "}
+              </MenuItem>
             </div>
           </Menu>
         </Sidebar>

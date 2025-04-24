@@ -14,12 +14,20 @@ const db = mysql.createPool({
   port: 3306,
 });
 
+const tableMap = {
+  vi: "vi_view",
+  hi: "hi_view",
+  nd: "nd_view",
+};
+
 const app = express();
 app.use(express.json());
-app.use(cors({
-  origin: "http://localhost:3000",
-  credentials:true}
-));
+app.use(
+  cors({
+    origin: "http://localhost:3000",
+    credentials: true,
+  })
+);
 app.use(cookieParser());
 
 app.post("/login", (req, res) => {
@@ -41,17 +49,42 @@ app.post("/login", (req, res) => {
 
     if (passwordMatch) {
       res.cookie("userEmail", email, {
-        httpOnly:true,
-        secure:false,
-        maxAge:24*60*60*1000
+        httpOnly: true,
+        secure: false,
+        maxAge: 24 * 60 * 60 * 1000,
       });
+      if (result[0].accessibility) {
+        const accessibility = result[0].accessibility;
+        if (accessibility === "vi") {
+          vi_user(email, accessibility, (err, accessibilityData) => {
+            if (err) {
+              console.error("Error fetching accessibility data:", err);
+              return res
+                .status(500)
+                .json({ message: "Error retrieving accessibility settings" });
+            }
+
+            res.cookie(
+              "accessibility",
+              JSON.stringify({
+                type: accessibility,
+                data: accessibilityData,
+              }),
+              {
+                httpOnly: true,
+                secure: false,
+                maxAge: 24 * 60 * 60 * 1000,
+              }
+            );
+          });
+        }
+      }
       return res.status(200).json({ message: "Login successful" });
     } else {
       return res.status(401).json({ message: "Invalid email or password." });
     }
   });
 });
-
 
 function hi_user(email, accessibility) {
   return new Promise((resolve, reject) => {
@@ -62,8 +95,8 @@ function hi_user(email, accessibility) {
       } else {
         resolve(200);
       }
+    });
   });
-});
 }
 
 function nd_user(email, accessibility) {
@@ -75,8 +108,27 @@ function nd_user(email, accessibility) {
       } else {
         resolve(200);
       }
+    });
   });
+}
+
+function vi_user(email, accessibility, callback) {
+  const table = tableMap[accessibility];
+  if (!table) {
+    return callback(new Error("Invalid accessibility value"), null);
+  }
+  const accessSQL = `SELECT voice, pitch, rate, volume FROM ${table} WHERE email = ?`;
+  db.query(accessSQL, [email], (err, results) => {
+    if (err) {
+      console.error("Error fetching accessibility data for user ", email);
+      return callback(err, null);
+    }
+    return callback(null, results[0] || {});
   });
+}
+
+function setAccessibilityCookie(res, email, accessibility, callback) {
+
 }
 
 app.post("/register", async (req, res) => {
@@ -88,23 +140,25 @@ app.post("/register", async (req, res) => {
 
     const sql =
       "INSERT INTO Users (firstName, lastName, email, password, accessibility) VALUES (?, ?, ?, ?, ?)";
-      db.query(sql, [firstName, lastName, email, hashedPassword, accessibility], (err) => {
+    db.query(
+      sql,
+      [firstName, lastName, email, hashedPassword, accessibility],
+      (err) => {
         if (err) {
           console.error("Database error:", err);
           return res.status(500).json({ message: "Error registering user" });
         }
         res.cookie("userEmail", email, {
-          httpOnly:true,
-          secure:false,
-          maxAge:24*60*60*1000
+          httpOnly: true,
+          secure: false,
+          maxAge: 24 * 60 * 60 * 1000,
         });
-        res.cookie("accessibility", accessibility, {
-          httpOnly:true,
-          secure:false,
-          maxAge:24*60*60*1000
-        })
-        return res.status(201).json({ message: "User registered successfully" });
-      });
+
+        return res
+          .status(201)
+          .json({ message: "User registered successfully" });
+      }
+    );
   } catch (error) {
     return res.status(500).json({ message: "Server error" });
   }
@@ -117,16 +171,32 @@ app.post("/vi_view", async (req, res) => {
 
     const sql =
       "INSERT INTO vi_view (email, voice, pitch, rate, volume) VALUES (?, ?, ?, ?, ?)";
-    console.log(email);
+
     db.query(sql, [email, voice, pitch, rate, volume], (err) => {
       if (err) {
         console.error("Database error:", err);
         return res.status(500).json({ message: "Error saving VI preferences" });
       }
 
-      return res.status(201).json({ message: "VI preferences saved successfully" });
-    });
+      const accessibilityData = {voice, pitch, rate, volume};
 
+        res.cookie(
+          "accessibility",
+          JSON.stringify({
+            type: "vi",
+            data: accessibilityData,
+          }),
+          {
+            httpOnly: true,
+            secure: false,
+            maxAge: 24 * 60 * 60 * 1000,
+          }
+        );
+
+      return res
+        .status(201)
+        .json({ message: "VI preferences saved successfully" });
+    });
   } catch (error) {
     console.error("Server error:", error);
     return res.status(500).json({ message: "Server error" });
@@ -139,16 +209,17 @@ app.post("/hi_view", async (req, res) => {
 
     const sql =
       "INSERT INTO hi_view (email, voice, pitch, rate, volume) VALUES (?, ?)";
-    
+
     db.query(sql, [email, accessibility], (err) => {
       if (err) {
         console.error("Database error:", err);
         return res.status(500).json({ message: "Error saving HI preferences" });
       }
 
-      return res.status(201).json({ message: "HI preferences saved successfully" });
+      return res
+        .status(201)
+        .json({ message: "HI preferences saved successfully" });
     });
-
   } catch (error) {
     console.error("Server error:", error);
     return res.status(500).json({ message: "Server error" });
@@ -161,16 +232,17 @@ app.post("/nd_view", async (req, res) => {
 
     const sql =
       "INSERT INTO nd_view (email, voice, pitch, rate, volume) VALUES (?, ?)";
-    
+
     db.query(sql, [email, accessibility], (err) => {
       if (err) {
         console.error("Database error:", err);
         return res.status(500).json({ message: "Error saving ND preferences" });
       }
 
-      return res.status(201).json({ message: "ND preferences saved successfully" });
+      return res
+        .status(201)
+        .json({ message: "ND preferences saved successfully" });
     });
-
   } catch (error) {
     console.error("Server error:", error);
     return res.status(500).json({ message: "Server error" });
@@ -258,6 +330,12 @@ app.post("/api/transfer", async (req, res) => {
       });
     });
   });
+});
+
+app.post("/logout", (req, res) => {
+  res.clearCookie("userEmail");
+  res.clearCookie("accessibility");
+  return res.status(200).json({ message: "Logged out successfully" });
 });
 
 const PORT = process.env.PORT || 4000;

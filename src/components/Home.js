@@ -198,7 +198,7 @@ export default function Home() {
                 {" "}
                 Savings{" "}
               </MenuItem>
-              <MenuItem> Insights </MenuItem>
+              <MenuItem onClick={() => navigate("/insights")}> Insights </MenuItem>
               <MenuItem onClick={() => navigate("/payments")}> Payments </MenuItem>
               <br />
               <Divider />
