@@ -68,7 +68,7 @@ export default function Layout({ children, messages }) {
                       method: "POST",
                       credentials: "include",
                     });
-                    navigate("/home");
+                    navigate("/");
                   } catch (error) {
                     console.error("Logout failed:", error);
                   }

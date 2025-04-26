@@ -6,6 +6,7 @@ import LoginAttempt from './components/Login'
 import SignUp from './components/signup'
 import Home from './components/Home'
 import VISetup from './components/VISetup'
+import HISetup from './components/HISetup'
 import Savings from './components/Savings'
 import Payments from './components/Payments'
 import Insights from './components/Insights'
@@ -28,6 +29,7 @@ function App() {
         </div> }/>
         <Route path="/home" element={<Home />} />
         <Route path="/VISetup" element={<VISetup />} />
+        <Route path="/HISetup" element={<HISetup />} />
         <Route path="/savings" element={<Savings/>} />
         <Route path="/payments" element={<Payments/>}/> 
         <Route path="/insights" element={<Insights/>}/> 

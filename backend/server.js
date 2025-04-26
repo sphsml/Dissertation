@@ -36,7 +36,7 @@ app.post("/login", (req, res) => {
   const sql = "SELECT * FROM Users WHERE email = ?";
   db.query(sql, [email], async (err, result) => {
     if (err) {
-      res
+      return res
         .status(500)
         .json({ message: "An error occurred while processing your request." });
     }
@@ -47,55 +47,87 @@ app.post("/login", (req, res) => {
     const storedHashedPassword = result[0].password;
     const passwordMatch = await bcrypt.compare(password, storedHashedPassword);
 
-    if (passwordMatch) {
-      res.cookie("userEmail", email, {
-        httpOnly: true,
-        secure: false,
-        maxAge: 24 * 60 * 60 * 1000,
-      });
-      if (result[0].accessibility) {
-        const accessibility = result[0].accessibility;
-        if (accessibility === "vi") {
-          vi_user(email, accessibility, (err, accessibilityData) => {
-            if (err) {
-              console.error("Error fetching accessibility data:", err);
-              return res
-                .status(500)
-                .json({ message: "Error retrieving accessibility settings" });
-            }
-
-            res.cookie(
-              "accessibility",
-              JSON.stringify({
-                type: accessibility,
-                data: accessibilityData,
-              }),
-              {
-                httpOnly: true,
-                secure: false,
-                maxAge: 24 * 60 * 60 * 1000,
-              }
-            );
-          });
-        }
-      }
-      return res.status(200).json({ message: "Login successful" });
-    } else {
+    if (!passwordMatch) {
       return res.status(401).json({ message: "Invalid email or password." });
+    }
+
+    res.cookie("userEmail", email, {
+      httpOnly: true,
+      secure: false,
+      maxAge: 24 * 60 * 60 * 1000,
+    });
+
+    if (result[0].accessibility) {
+      const accessibility = result[0].accessibility;
+
+      if (accessibility === "vi") {
+        return vi_user(email, accessibility, (err, accessibilityData) => {
+          if (err) {
+            console.error("Error fetching accessibility data:", err);
+            return res
+              .status(500)
+              .json({ message: "Error retrieving accessibility settings" });
+          }
+
+          res.cookie(
+            "accessibility",
+            JSON.stringify({
+              type: accessibility,
+              data: accessibilityData,
+            }),
+            {
+              httpOnly: true,
+              secure: false,
+              maxAge: 24 * 60 * 60 * 1000,
+            }
+          );
+          return res.status(200).json({ message: "Login successful" });
+        });
+      }
+
+      if (accessibility === "hi") {
+        return hi_user(email, accessibility, (err, accessibilityData) => {
+          if (err) {
+            console.error("Error fetching accessibility data:", err);
+            return res
+              .status(500)
+              .json({ message: "Error retrieving accessibility settings" });
+          }
+
+          res.cookie(
+            "accessibility",
+            JSON.stringify({
+              type: accessibility,
+              data: accessibilityData,
+            }),
+            {
+              httpOnly: true,
+              secure: false,
+              maxAge: 24 * 60 * 60 * 1000,
+            }
+          );
+          return res.status(200).json({ message: "Login successful" });
+        });
+      }
+    } else {
+      // No accessibility settings, normal login
+      return res.status(200).json({ message: "Login successful" });
     }
   });
 });
 
-function hi_user(email, accessibility) {
-  return new Promise((resolve, reject) => {
-    const sql = "INSERT INTO hi_view (email, accessibility) VALUES (?, ?)";
-    db.query(sql, [email, accessibility], (err) => {
-      if (err) {
-        reject(500);
-      } else {
-        resolve(200);
-      }
-    });
+function hi_user(email, accessibility, callback) {
+  const table = tableMap[accessibility];
+  if (!table) {
+    return callback(new Error("Invalid accessibility value"), null);
+  }
+  const accessSQL = `SELECT notification_type, text_size, custom_cursor, simple_english FROM ${table} WHERE email = ?`;
+  db.query(accessSQL, [email], (err, results) => {
+    if (err) {
+      console.error("Error fetching accessibility data for user ", email);
+      return callback(err, null);
+    }
+    return callback(null, results[0] || {});
   });
 }
 
@@ -127,9 +159,7 @@ function vi_user(email, accessibility, callback) {
   });
 }
 
-function setAccessibilityCookie(res, email, accessibility, callback) {
-
-}
+function setAccessibilityCookie(res, email, accessibility, callback) {}
 
 app.post("/register", async (req, res) => {
   try {
@@ -178,20 +208,20 @@ app.post("/vi_view", async (req, res) => {
         return res.status(500).json({ message: "Error saving VI preferences" });
       }
 
-      const accessibilityData = {voice, pitch, rate, volume};
+      const accessibilityData = { voice, pitch, rate, volume };
 
-        res.cookie(
-          "accessibility",
-          JSON.stringify({
-            type: "vi",
-            data: accessibilityData,
-          }),
-          {
-            httpOnly: true,
-            secure: false,
-            maxAge: 24 * 60 * 60 * 1000,
-          }
-        );
+      res.cookie(
+        "accessibility",
+        JSON.stringify({
+          type: "vi",
+          data: accessibilityData,
+        }),
+        {
+          httpOnly: true,
+          secure: false,
+          maxAge: 24 * 60 * 60 * 1000,
+        }
+      );
 
       return res
         .status(201)
@@ -205,21 +235,55 @@ app.post("/vi_view", async (req, res) => {
 
 app.post("/hi_view", async (req, res) => {
   try {
-    const { email, accessibility } = req.body;
+    const email = req.cookies.userEmail;
+    const { notification_type, text_size, custom_cursor, simple_english } =
+      req.body;
 
-    const sql =
-      "INSERT INTO hi_view (email, voice, pitch, rate, volume) VALUES (?, ?)";
+    if (!email) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
 
-    db.query(sql, [email, accessibility], (err) => {
-      if (err) {
-        console.error("Database error:", err);
-        return res.status(500).json({ message: "Error saving HI preferences" });
+    const sql = `
+      INSERT INTO hi_view (email, notification_type, text_size, custom_cursor, simple_english)
+      VALUES (?, ?, ?, ?, ?)
+    `;
+
+    db.query(
+      sql,
+      [email, notification_type, text_size, custom_cursor, simple_english],
+      (err) => {
+        if (err) {
+          console.error("Database error:", err);
+          return res
+            .status(500)
+            .json({ message: "Error saving HI preferences" });
+        }
+
+        const accessibilityData = {
+          notification_type,
+          text_size,
+          custom_cursor,
+          simple_english,
+        };
+
+        res.cookie(
+          "accessibility",
+          JSON.stringify({
+            type: "hi",
+            data: accessibilityData,
+          }),
+          {
+            httpOnly: true,
+            secure: false,
+            maxAge: 24 * 60 * 60 * 1000,
+          }
+        );
+
+        return res
+          .status(201)
+          .json({ message: "HI preferences saved successfully" });
       }
-
-      return res
-        .status(201)
-        .json({ message: "HI preferences saved successfully" });
-    });
+    );
   } catch (error) {
     console.error("Server error:", error);
     return res.status(500).json({ message: "Server error" });
@@ -351,35 +415,29 @@ app.post("/update-settings", async (req, res) => {
 
     const sqlAccessibility =
       "REPLACE INTO vi_view (email, voice, pitch, rate, volume) VALUES (?, ?, ?, ?, ?)";
-    db.query(
-      sqlAccessibility,
-      [email, voice, pitch, rate, volume],
-      (err) => {
-        if (err) {
-          console.error("Accessibility update failed:", err);
-          return res
-            .status(500)
-            .json({ message: "Failed to update accessibility preferences" });
-        }
-
-        res.cookie(
-          "accessibility",
-          JSON.stringify({
-            type: "vi",
-            data: { voice, pitch, rate, volume },
-          }),
-          {
-            httpOnly: true,
-            secure: false,
-            maxAge: 24 * 60 * 60 * 1000,
-          }
-        );
-
+    db.query(sqlAccessibility, [email, voice, pitch, rate, volume], (err) => {
+      if (err) {
+        console.error("Accessibility update failed:", err);
         return res
-          .status(200)
-          .json({ message: "Settings updated successfully" });
+          .status(500)
+          .json({ message: "Failed to update accessibility preferences" });
       }
-    );
+
+      res.cookie(
+        "accessibility",
+        JSON.stringify({
+          type: "vi",
+          data: { voice, pitch, rate, volume },
+        }),
+        {
+          httpOnly: true,
+          secure: false,
+          maxAge: 24 * 60 * 60 * 1000,
+        }
+      );
+
+      return res.status(200).json({ message: "Settings updated successfully" });
+    });
   } catch (err) {
     console.error("Update settings error:", err);
     res.status(500).json({ message: "Server error" });
