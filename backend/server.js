@@ -52,7 +52,7 @@ app.post("/login", (req, res) => {
     }
 
     res.cookie("userEmail", email, {
-      httpOnly: true,
+      httpOnly: false,
       secure: false,
       maxAge: 24 * 60 * 60 * 1000,
     });
@@ -76,7 +76,7 @@ app.post("/login", (req, res) => {
               data: accessibilityData,
             }),
             {
-              httpOnly: true,
+              httpOnly: false,
               secure: false,
               maxAge: 24 * 60 * 60 * 1000,
             }
@@ -101,7 +101,7 @@ app.post("/login", (req, res) => {
               data: accessibilityData,
             }),
             {
-              httpOnly: true,
+              httpOnly: false,
               secure: false,
               maxAge: 24 * 60 * 60 * 1000,
             }
@@ -179,7 +179,7 @@ app.post("/register", async (req, res) => {
           return res.status(500).json({ message: "Error registering user" });
         }
         res.cookie("userEmail", email, {
-          httpOnly: true,
+          httpOnly: false,
           secure: false,
           maxAge: 24 * 60 * 60 * 1000,
         });
@@ -217,7 +217,7 @@ app.post("/vi_view", async (req, res) => {
           data: accessibilityData,
         }),
         {
-          httpOnly: true,
+          httpOnly: false,
           secure: false,
           maxAge: 24 * 60 * 60 * 1000,
         }
@@ -273,7 +273,7 @@ app.post("/hi_view", async (req, res) => {
             data: accessibilityData,
           }),
           {
-            httpOnly: true,
+            httpOnly: false,
             secure: false,
             maxAge: 24 * 60 * 60 * 1000,
           }
@@ -430,7 +430,7 @@ app.post("/update-settings", async (req, res) => {
           data: { voice, pitch, rate, volume },
         }),
         {
-          httpOnly: true,
+          httpOnly: false,
           secure: false,
           maxAge: 24 * 60 * 60 * 1000,
         }

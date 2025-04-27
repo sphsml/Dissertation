@@ -3,9 +3,11 @@ import "./components.css";
 import { React, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Divider } from "@react-md/divider";
-import Layout from "./Layout"
+import Layout from "./Layout";
 import { speak } from "../utils/speak";
 import { Chart } from "react-google-charts";
+import CustomCursor from "../utils/CustomCursor";
+import useAccessibilitySettings from "../utils/useAccessibilitySettings";
 
 const messages = [
   "The new tax year starts soon.",
@@ -65,16 +67,39 @@ const accessibility = [
 ];
 
 export default function Home() {
+  const accessibilitySettings = useAccessibilitySettings();
+  const [mousePosition, setMousePosition] = useState({x:0, y:0});
+  const showCustomCursor = accessibilitySettings?.custom_cursor;
+  
   useEffect(() => {
-    if(typeof window !== "undefined") {
+    if (typeof window !== "undefined") {
       window.speechSynthesis.onvoiceschanged = () => {
-        window.speechSynthesis.getVoices()};
+        window.speechSynthesis.getVoices();
+      };
     }
     window.addEventListener("keydown", handleKeyDown);
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, []);
+
+  useEffect (() => {
+    const handleMouseMove = (e) => {
+      setMousePosition({x: e.clientX, y: e.clientY});
+    };
+
+    if(showCustomCursor) {
+      document.body.style.cursor = "none";
+      window.addEventListener("mousemove", handleMouseMove);
+    } else {
+      document.body.style.cursor = "auto";
+    }
+
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      document.body.style.cursor = "auto";
+    }
+  }, [showCustomCursor]);
 
   const navigate = useNavigate();
 
@@ -196,8 +221,14 @@ export default function Home() {
                 {" "}
                 Savings{" "}
               </MenuItem>
-              <MenuItem onClick={() => navigate("/insights")}> Insights </MenuItem>
-              <MenuItem onClick={() => navigate("/payments")}> Payments </MenuItem>
+              <MenuItem onClick={() => navigate("/insights")}>
+                {" "}
+                Insights{" "}
+              </MenuItem>
+              <MenuItem onClick={() => navigate("/payments")}>
+                {" "}
+                Payments{" "}
+              </MenuItem>
               <br />
               <Divider />
               <MenuItem> Settings </MenuItem>
@@ -212,6 +243,7 @@ export default function Home() {
           </Menu>
         </Sidebar>
       </div>
+      {showCustomCursor && (<CustomCursor mousex={mousePosition.x} mousey={mousePosition.y} />)}
       <div style={{ display: "flex" }}>
         <div className="main-home" style={{ flex: 2 }}>
           <div className="bordered-div">

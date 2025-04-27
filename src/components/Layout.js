@@ -1,18 +1,80 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Sidebar, Menu, MenuItem, SubMenu } from "react-pro-sidebar";
 import { Divider } from "@react-md/divider";
 import { useNavigate } from "react-router-dom";
 import "./components.css";
+import CustomCursor from "../utils/CustomCursor";
+import useAccessibilitySettings from "../utils/useAccessibilitySettings";
 
 export default function Layout({ children, messages }) {
   const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false);
   const [internalShowModal, setInternalShowModal] = React.useState(false);
 
+  const accessibilitySettings= useAccessibilitySettings();
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+
+  const showCustomCursor = accessibilitySettings?.custom_cursor;
+  const textSize = accessibilitySettings?.text_size || "medium";
+  const notificationType = accessibilitySettings?.data?.notification_type || 'default';
+
   const handleMessagesClick = () => {
     setInternalShowModal(true);
     // if (setShowModal) setShowModal(true);
   };
+
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      setMousePosition({ x: e.clientX, y: e.clientY });
+    };
+
+    if (showCustomCursor) {
+      document.body.style.cursor = "none";
+      window.addEventListener("mousemove", handleMouseMove);
+    } else {
+      document.body.style.cursor = "auto";
+    }
+
+    const body = document.body;
+
+    switch(textSize) {
+      case 'small':
+        body.style.fontSize ="12px";
+        break;
+      case 'medium':
+        body.style.fontSize = "16px";
+        break;
+      case 'large':
+        body.style.fontSize = "20px";
+        break;
+      default:
+        body.style.fontSize = "16px";
+        break;
+    }
+
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      document.body.style.cursor = "auto";
+    };
+  }, [showCustomCursor, textSize]);
+
+  useEffect(() => {
+    if (notificationType === 'modal') {
+      setInternalShowModal(true);
+    }
+  }, [notificationType]);
+
+  // Flashing effect for notifications
+  const [flashing, setFlashing] = useState(false);
+  useEffect(() => {
+    let interval;
+    if (notificationType === 'flashing') {
+      interval = setInterval(() => {
+        setFlashing((prev) => !prev);
+      }, 500); // Flashes every 500ms
+    }
+    return () => clearInterval(interval);
+  }, [notificationType]);
 
   return (
     <div style={{ display: "flex" }}>
@@ -55,7 +117,10 @@ export default function Layout({ children, messages }) {
             </MenuItem>
             <br />
             <Divider />
-            <MenuItem onClick={() => navigate("/settings")}> Settings </MenuItem>
+            <MenuItem onClick={() => navigate("/settings")}>
+              {" "}
+              Settings{" "}
+            </MenuItem>
             <div className="menu-spacer">
               <Divider />
               <MenuItem> Help </MenuItem>
@@ -84,15 +149,34 @@ export default function Layout({ children, messages }) {
 
       <div style={{ flex: 1, padding: "20px" }}>{children}</div>
 
-      {/* Messages Modal */}
-      {showModal && (
+      {(notificationType === 'default' || notificationType === 'flashing') && (
         <div
           style={{
             position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
+            top: "20px",
+            right: "20px",
+            padding: "10px 20px",
+            backgroundColor: "#ffcc00",
+            color: "black",
+            borderRadius: "12px",
+            boxShadow: "0 5px 15px rgba(0, 0, 0, 0.1)",
+            fontWeight: "bold",
+            display: flashing ? "none" : "block", // Hide if flashing
+          }}
+        >
+          You have new messages!
+        </div>
+      )}
+
+      {/* Modal Notification */}
+      {internalShowModal && notificationType === 'modal' && (
+        <div
+          style={{
+            position: "fixed",
+            top: "0",
+            left: "0",
+            right: "0",
+            bottom: "0",
             backgroundColor: "rgba(0,0,0,0.5)",
             display: "flex",
             justifyContent: "center",
@@ -119,7 +203,7 @@ export default function Layout({ children, messages }) {
               ))}
             </ul>
             <button
-              onClick={() => setShowModal(false)}
+              onClick={() => setInternalShowModal(false)}
               style={{
                 marginTop: "20px",
                 backgroundColor: "#3b82f6",
@@ -135,18 +219,10 @@ export default function Layout({ children, messages }) {
           </div>
         </div>
       )}
-      {/* <Dialog open={internalShowModal} onClose={() => setInternalShowModal(false)}>
-        <div style={{ padding: "20px", maxWidth: "400px" }}>
-          <h2 style={{ marginBottom: "10px" }}>📨 You have {messages.length} new message(s)</h2>
-          <ul>
-            {messages.map((msg, i) => (
-              <li key={i} style={{ marginBottom: "8px" }}>
-                {msg}
-              </li>
-            ))}
-          </ul>
-        </div>
-      </Dialog> */}
+
+      {showCustomCursor && (
+        <CustomCursor mousex={mousePosition.x} mousey={mousePosition.y} />
+      )}
     </div>
   );
 }
