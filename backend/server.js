@@ -109,6 +109,30 @@ app.post("/login", (req, res) => {
           return res.status(200).json({ message: "Login successful" });
         });
       }
+      if (accessibility === "nd") {
+        return nd_user(email, accessibility, (err, accessibilityData) => {
+          if (err) {
+            console.error("Error fetching accessibility data:", err);
+            return res
+              .status(500)
+              .json({ message: "Error retrieving accessibility settings" });
+          }
+
+          res.cookie(
+            "accessibility",
+            JSON.stringify({
+              type: accessibility,
+              data: accessibilityData,
+            }),
+            {
+              httpOnly: false,
+              secure: false,
+              maxAge: 24 * 60 * 60 * 1000,
+            }
+          );
+          return res.status(200).json({ message: "Login successful" });
+        });
+      }
     } else {
       // No accessibility settings, normal login
       return res.status(200).json({ message: "Login successful" });
@@ -131,16 +155,28 @@ function hi_user(email, accessibility, callback) {
   });
 }
 
-function nd_user(email, accessibility) {
-  return new Promise((resolve, reject) => {
-    const sql = "INSERT INTO nd_view (email, accessibility) VALUES (?, ?)";
-    db.query(sql, [email, accessibility], (err) => {
-      if (err) {
-        reject(500);
-      } else {
-        resolve(200);
-      }
-    });
+function nd_user(email, accessibility, callback) {
+  const table = tableMap[accessibility];
+  if (!table) {
+    return callback(new Error("Invalid accessibility value"), null);
+  }
+  const accessSQL = `SELECT notification_type,
+      text_size,
+      custom_cursor,
+      bionic_reading,
+      text_to_speech,
+      voice: voice?.name || "",
+      pitch,
+      rate,
+      volume,
+      text_colour,
+      component_colour FROM ${table} WHERE email = ?`;
+  db.query(accessSQL, [email], (err, results) => {
+    if (err) {
+      console.error("Error fetching accessibility data for user ", email);
+      return callback(err, null);
+    }
+    return callback(null, results[0] || {});
   });
 }
 
@@ -292,21 +328,87 @@ app.post("/hi_view", async (req, res) => {
 
 app.post("/nd_view", async (req, res) => {
   try {
-    const { email, accessibility } = req.body;
+    const email = req.cookies.userEmail;
+    const { notification_type,
+      text_size,
+      custom_cursor,
+      bionic_reading,
+      text_to_speech,
+      voice,
+      pitch,
+      rate,
+      volume,
+      text_colour,
+      component_colour } = req.body;
 
-    const sql =
-      "INSERT INTO nd_view (email, voice, pitch, rate, volume) VALUES (?, ?)";
+    if (!email) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
 
-    db.query(sql, [email, accessibility], (err) => {
-      if (err) {
-        console.error("Database error:", err);
-        return res.status(500).json({ message: "Error saving ND preferences" });
+    const sql = `
+      INSERT INTO nd_view (email, notification_type,
+      text_size,
+      custom_cursor,
+      bionic_reading,
+      text_to_speech,
+      voice: voice?.name || "",
+      pitch,
+      rate,
+      volume,
+      text_colour,
+      component_colour)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?,?,?,?,?)
+    `;
+
+    db.query(
+      sql,
+      [email, notification_type,
+        text_size,
+        custom_cursor,
+        bionic_reading,
+        text_to_speech,
+        voice,
+        pitch,
+        rate,
+        volume,
+        text_colour,
+        component_colour],
+      (err) => {
+        if (err) {
+          console.error("Database error:", err);
+          return res.status(500).json({ message: "Error saving ND preferences" });
+        }
+
+        const accessibilityData = {
+          notification_type,
+        text_size,
+        custom_cursor,
+        bionic_reading,
+        text_to_speech,
+        voice,
+        pitch,
+        rate,
+        volume,
+        text_colour,
+        component_colour,
+        };
+
+        res.cookie(
+          "accessibility",
+          JSON.stringify({
+            type: "nd",
+            data: accessibilityData,
+          }),
+          {
+            httpOnly: false,
+            secure: false,
+            maxAge: 24 * 60 * 60 * 1000,
+          }
+        );
+
+        return res.status(201).json({ message: "ND preferences saved successfully" });
       }
-
-      return res
-        .status(201)
-        .json({ message: "ND preferences saved successfully" });
-    });
+    );
   } catch (error) {
     console.error("Server error:", error);
     return res.status(500).json({ message: "Server error" });

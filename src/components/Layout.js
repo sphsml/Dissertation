@@ -3,6 +3,7 @@ import { Sidebar, Menu, MenuItem, SubMenu } from "react-pro-sidebar";
 import { Divider } from "@react-md/divider";
 import { useNavigate } from "react-router-dom";
 import "./components.css";
+import {textVide} from "text-vide"
 import CustomCursor from "../utils/CustomCursor";
 import useAccessibilitySettings from "../utils/useAccessibilitySettings";
 
@@ -10,18 +11,27 @@ export default function Layout({ children, messages }) {
   const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false);
   const [internalShowModal, setInternalShowModal] = React.useState(false);
-
-  const accessibilitySettings= useAccessibilitySettings();
+  const accessibilitySettings = useAccessibilitySettings();
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
 
-  const showCustomCursor = accessibilitySettings?.custom_cursor;
-  const textSize = accessibilitySettings?.text_size || "medium";
+  const [textColour, setTextColour] = useState("#000000"); // Default: black text
+  const [componentColour, setComponentColour] = useState("#ffffff"); // Default: white background
+
+  const showCustomCursor = accessibilitySettings?.data?.custom_cursor;
+  const textSize = accessibilitySettings?.data?.text_size || "medium";
   const notificationType = accessibilitySettings?.data?.notification_type || 'default';
+  const bionic_reading = accessibilitySettings?.data?.bionic_reading;
 
   const handleMessagesClick = () => {
     setInternalShowModal(true);
-    // if (setShowModal) setShowModal(true);
   };
+
+  // Function to read a cookie
+  function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+  }
 
   useEffect(() => {
     const handleMouseMove = (e) => {
@@ -37,9 +47,10 @@ export default function Layout({ children, messages }) {
 
     const body = document.body;
 
-    switch(textSize) {
+    // Text size settings
+    switch (textSize) {
       case 'small':
-        body.style.fontSize ="12px";
+        body.style.fontSize = "12px";
         break;
       case 'medium':
         body.style.fontSize = "16px";
@@ -64,22 +75,44 @@ export default function Layout({ children, messages }) {
     }
   }, [notificationType]);
 
-  // Flashing effect for notifications
+  // Read colours from cookies on mount
+  useEffect(() => {
+    const textColorFromCookie = getCookie('text_colour');
+    const componentColorFromCookie = getCookie('component_colour');
+
+    if (textColorFromCookie) {
+      setTextColour(decodeURIComponent(textColorFromCookie));
+    }
+    if (componentColorFromCookie) {
+      setComponentColour(decodeURIComponent(componentColorFromCookie));
+    }
+  }, []);
+
   const [flashing, setFlashing] = useState(false);
   useEffect(() => {
     let interval;
     if (notificationType === 'flashing') {
       interval = setInterval(() => {
         setFlashing((prev) => !prev);
-      }, 500); // Flashes every 500ms
+      }, 500);
     }
     return () => clearInterval(interval);
   }, [notificationType]);
 
+  const renderContent = () => {
+    if (bionic_reading) {
+      const bionicHTML = textVide(children, {});
+      return (
+        <div dangerouslySetInnerHTML={{__html: bionicHTML}} />
+      );
+    }
+    return children;
+  };
+
   return (
-    <div style={{ display: "flex" }}>
+    <div style={{ display: "flex", backgroundColor: componentColour, color: textColour, minHeight: "100vh" }}>
       <div className="sidebar-container">
-        <Sidebar>
+        <Sidebar style={{ backgroundColor: componentColour }}>
           <Menu>
             <h1>@One4All</h1>
             <br />
@@ -107,20 +140,11 @@ export default function Layout({ children, messages }) {
               </span>
             </MenuItem>
             <MenuItem onClick={() => navigate("/savings")}> Savings </MenuItem>
-            <MenuItem onClick={() => navigate("/insights")}>
-              {" "}
-              Insights{" "}
-            </MenuItem>
-            <MenuItem onClick={() => navigate("/payments")}>
-              {" "}
-              Payments{" "}
-            </MenuItem>
+            <MenuItem onClick={() => navigate("/insights")}> Insights </MenuItem>
+            <MenuItem onClick={() => navigate("/payments")}> Payments </MenuItem>
             <br />
             <Divider />
-            <MenuItem onClick={() => navigate("/settings")}>
-              {" "}
-              Settings{" "}
-            </MenuItem>
+            <MenuItem onClick={() => navigate("/settings")}> Settings </MenuItem>
             <div className="menu-spacer">
               <Divider />
               <MenuItem> Help </MenuItem>
@@ -139,15 +163,14 @@ export default function Layout({ children, messages }) {
                   }
                 }}
               >
-                {" "}
-                Log Out{" "}
+                Log Out
               </MenuItem>
             </div>
           </Menu>
         </Sidebar>
       </div>
 
-      <div style={{ flex: 1, padding: "20px" }}>{children}</div>
+      <div style={{ flex: 1, padding: "20px" }}>{renderContent()}</div>
 
       {(notificationType === 'default' || notificationType === 'flashing') && (
         <div
@@ -157,18 +180,17 @@ export default function Layout({ children, messages }) {
             right: "20px",
             padding: "10px 20px",
             backgroundColor: "#ffcc00",
-            color: "black",
+            color: textColour,
             borderRadius: "12px",
             boxShadow: "0 5px 15px rgba(0, 0, 0, 0.1)",
             fontWeight: "bold",
-            display: flashing ? "none" : "block", // Hide if flashing
+            display: flashing ? "none" : "block",
           }}
         >
           You have new messages!
         </div>
       )}
 
-      {/* Modal Notification */}
       {internalShowModal && notificationType === 'modal' && (
         <div
           style={{
@@ -192,6 +214,7 @@ export default function Layout({ children, messages }) {
               minWidth: "320px",
               maxWidth: "500px",
               boxShadow: "0 10px 25px rgba(0,0,0,0.2)",
+              color: textColour,
             }}
           >
             <h2 style={{ marginBottom: "16px" }}>Messages</h2>

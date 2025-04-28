@@ -11,6 +11,7 @@ import Savings from './components/Savings'
 import Payments from './components/Payments'
 import Insights from './components/Insights'
 import Settings from './components/Settings'
+import NDSetup from './components/NDSetup'
 
 function App() {
   return (
@@ -30,6 +31,7 @@ function App() {
         <Route path="/home" element={<Home />} />
         <Route path="/VISetup" element={<VISetup />} />
         <Route path="/HISetup" element={<HISetup />} />
+        <Route path="/NDSetup" element={<NDSetup />} />
         <Route path="/savings" element={<Savings/>} />
         <Route path="/payments" element={<Payments/>}/> 
         <Route path="/insights" element={<Insights/>}/> 

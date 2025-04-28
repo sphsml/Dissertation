@@ -27,6 +27,7 @@
     "react-pro-sidebar": "^1.1.0",
     "react-router-dom": "^7.1.5",
     "react-scripts": "5.0.1",
+    "text-vide": "^1.8.2",
     "web-vitals": "^2.1.4"
   },
   "scripts": {
