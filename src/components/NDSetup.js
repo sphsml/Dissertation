@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 import { useCustomCursor } from "../utils/useCustomCursor";
 import CustomCursor from "../utils/CustomCursor";
 
 const NDSetup = () => {
+    const navigate = useNavigate();
   const [notification_type, setNotificationType] = useState("default");
   const [text_size, setTextSize] = useState("medium");
   const [custom_cursor, setCustomCursor] = useState(false);
@@ -70,6 +72,8 @@ const NDSetup = () => {
     } catch (error) {
       console.error("Error saving preferences:", error);
     }
+
+    navigate("/Home");
   };
 
   const textSizeMap = {
@@ -88,7 +92,7 @@ const NDSetup = () => {
         margin: "auto",
         fontSize: textSizeMap[text_size],
         color: text_colour,
-        backgroundcolor: component_colour,
+        backgroundColor: component_colour,
         cursor: custom_cursor ? "none" : "auto",
       }}
     >

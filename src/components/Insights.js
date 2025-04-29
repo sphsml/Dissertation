@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { speak } from "../utils/speak";
+import useAccessibilitySettings from "../utils/useAccessibilitySettings";
 import Layout from "./Layout";
 
 export default function Insights() {
@@ -52,27 +53,10 @@ export default function Insights() {
   ];
 
   // State to track if we need simple English
-  const [isSimpleEnglish, setIsSimpleEnglish] = useState(false);
+    const accessibilitySettings = useAccessibilitySettings();
+  const simpleEnglish = accessibilitySettings?.simple_english;
 
   useEffect(() => {
-    // Check accessibility cookie for 'simple_english' flag
-    const cookies = document.cookie.split(";").reduce((acc, cookie) => {
-      const separatorIndex = cookie.indexOf("=");
-      if (separatorIndex === -1) return acc;
-      const name = cookie.slice(0, separatorIndex).trim();
-      const value = cookie.slice(separatorIndex + 1).trim();
-      acc[name] = value;
-      return acc;
-    }, {});
-
-    // Set isSimpleEnglish state based on the 'simple_english' cookie value
-    if (cookies.accessibility) {
-      const decoded = decodeURIComponent(cookies.accessibility);
-      const accessibilityData = JSON.parse(decoded);
-      setIsSimpleEnglish(accessibilityData?.data?.simple_english === 1);
-    }
-
-    // Speak the welcome messages
     const messages = [
       "Welcome to your personalized investment insights.",
       "Explore different options based on your financial goals.",
@@ -85,19 +69,19 @@ export default function Insights() {
     if (event.key === "ArrowRight") {
       setCurrentIndex((prevIndex) => {
         const newIndex = Math.min(prevIndex + 1, insights.length - 1);
-        speak(isSimpleEnglish ? insights[newIndex].simpleDescription : insights[newIndex].description);
+        speak(simpleEnglish ? insights[newIndex].simpleDescription : insights[newIndex].description);
         return newIndex;
       });
     } else if (event.key === "ArrowLeft") {
       setCurrentIndex((prevIndex) => {
         const newIndex = Math.max(prevIndex - 1, 0);
-        speak(isSimpleEnglish ? insights[newIndex].simpleDescription : insights[newIndex].description);
+        speak(simpleEnglish ? insights[newIndex].simpleDescription : insights[newIndex].description);
         return newIndex;
       });
     } else if (event.key === "ArrowDown") {
       setCurrentIndex((prevIndex) => {
         const newIndex = Math.min(prevIndex + 1, insights.length - 1);
-        speak(isSimpleEnglish ? insights[newIndex].simpleDescription : insights[newIndex].description);
+        speak(simpleEnglish ? insights[newIndex].simpleDescription : insights[newIndex].description);
         return newIndex;
       });
     }
@@ -108,7 +92,7 @@ export default function Insights() {
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isSimpleEnglish]);
+  }, [simpleEnglish, handleKeyDown]);
 
   return (
     <Layout messages={["Welcome to your personalized investment insights."]}>
@@ -129,7 +113,7 @@ export default function Insights() {
               {insight.title}
             </h2>
             <p style={{ lineHeight: "1.5rem" }}>
-              {isSimpleEnglish ? insight.simpleDescription : insight.description}
+              {simpleEnglish ? insight.simpleDescription : insight.description}
             </p>
           </div>
         ))}

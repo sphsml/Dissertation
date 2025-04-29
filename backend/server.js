@@ -3,7 +3,6 @@ const mysql = require("mysql");
 const cors = require("cors");
 const bcrypt = require("bcryptjs");
 const cookieParser = require("cookie-parser");
-const jwt = require("jsonwebtoken");
 
 const db = mysql.createPool({
   connectionLimit: 30, // Adjust as needed
@@ -351,7 +350,7 @@ app.post("/nd_view", async (req, res) => {
       custom_cursor,
       bionic_reading,
       text_to_speech,
-      voice: voice?.name || "",
+      voice,
       pitch,
       rate,
       volume,

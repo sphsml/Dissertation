@@ -113,18 +113,24 @@ const Settings = () => {
 
   const handleUpdate = async () => {
     try {
-      await axios.post("/update-settings", {
+      await axios.post("http://localhost:4000/update-settings", {
         password,
-        voice,
+        voice: voice? voice.name : null,
         pitch,
         rate,
         volume,
-      });
+      }, {withCredentials: true});
       alert("Settings updated successfully.");
     } catch (error) {
       console.error(error);
       alert("Failed to update settings.");
     }
+  };
+
+  const handleVoiceChange = (e) => {
+    const selectedVoiceName = e.target.value;
+    const selectedVoice = voices.find((v) => v.name === selectedVoiceName);
+    setVoice(selectedVoice); // Set the full voice object
   };
 
   return (
@@ -145,7 +151,7 @@ const Settings = () => {
 
       <div className="form-group">
         <label>Voice</label>
-        <select value={voice} onChange={(e) => setVoice(e.target.value)}>
+        <select value={voice ? voice.name : ""} onChange={handleVoiceChange}>
           <option value="">Select a voice</option>
           {voices.map((v, i) => (
             <option key={i} value={v.name}>

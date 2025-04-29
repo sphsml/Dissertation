@@ -3,8 +3,9 @@ import { Sidebar, Menu, MenuItem, SubMenu } from "react-pro-sidebar";
 import { Divider } from "@react-md/divider";
 import { useNavigate } from "react-router-dom";
 import "./components.css";
-import {textVide} from "text-vide"
+import { textVide } from "text-vide";
 import CustomCursor from "../utils/CustomCursor";
+import "../components/components.css";
 import useAccessibilitySettings from "../utils/useAccessibilitySettings";
 
 export default function Layout({ children, messages }) {
@@ -13,25 +14,15 @@ export default function Layout({ children, messages }) {
   const [internalShowModal, setInternalShowModal] = React.useState(false);
   const accessibilitySettings = useAccessibilitySettings();
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-
+  const [flashing, setFlashing] = useState(false);
   const [textColour, setTextColour] = useState("#000000"); // Default: black text
   const [componentColour, setComponentColour] = useState("#ffffff"); // Default: white background
-
-  const showCustomCursor = accessibilitySettings?.data?.custom_cursor;
-  const textSize = accessibilitySettings?.data?.text_size || "medium";
-  const notificationType = accessibilitySettings?.data?.notification_type || 'default';
-  const bionic_reading = accessibilitySettings?.data?.bionic_reading;
-
-  const handleMessagesClick = () => {
-    setInternalShowModal(true);
-  };
-
-  // Function to read a cookie
-  function getCookie(name) {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop().split(';').shift();
-  }
+  const [notificationDismissed, setNotificationDismissed] = useState(false);
+  const showCustomCursor = accessibilitySettings?.custom_cursor;
+  const textSize = accessibilitySettings?.text_size || "medium";
+  const notificationType =
+    accessibilitySettings?.notification_type || "default";
+  const bionic_reading = accessibilitySettings?.bionic_reading;
 
   useEffect(() => {
     const handleMouseMove = (e) => {
@@ -49,13 +40,13 @@ export default function Layout({ children, messages }) {
 
     // Text size settings
     switch (textSize) {
-      case 'small':
+      case "small":
         body.style.fontSize = "12px";
         break;
-      case 'medium':
+      case "medium":
         body.style.fontSize = "16px";
         break;
-      case 'large':
+      case "large":
         body.style.fontSize = "20px";
         break;
       default:
@@ -70,15 +61,15 @@ export default function Layout({ children, messages }) {
   }, [showCustomCursor, textSize]);
 
   useEffect(() => {
-    if (notificationType === 'modal') {
+    if (notificationType === "modal") {
       setInternalShowModal(true);
     }
   }, [notificationType]);
 
   // Read colours from cookies on mount
   useEffect(() => {
-    const textColorFromCookie = getCookie('text_colour');
-    const componentColorFromCookie = getCookie('component_colour');
+    const textColorFromCookie = accessibilitySettings?.textColour;
+    const componentColorFromCookie = accessibilitySettings?.componentColour;
 
     if (textColorFromCookie) {
       setTextColour(decodeURIComponent(textColorFromCookie));
@@ -88,29 +79,38 @@ export default function Layout({ children, messages }) {
     }
   }, []);
 
-  const [flashing, setFlashing] = useState(false);
+  const handleMessagesClick = () => {
+    setNotificationDismissed(true);
+    setInternalShowModal(true);
+  };
+
   useEffect(() => {
     let interval;
-    if (notificationType === 'flashing') {
+    if (notificationType === "flashing" && !notificationDismissed) {
       interval = setInterval(() => {
         setFlashing((prev) => !prev);
-      }, 500);
+      }, 1000);
     }
     return () => clearInterval(interval);
-  }, [notificationType]);
+  }, [notificationType, notificationDismissed]);
 
   const renderContent = () => {
     if (bionic_reading) {
       const bionicHTML = textVide(children, {});
-      return (
-        <div dangerouslySetInnerHTML={{__html: bionicHTML}} />
-      );
+      return <div dangerouslySetInnerHTML={{ __html: bionicHTML }} />;
     }
     return children;
   };
 
   return (
-    <div style={{ display: "flex", backgroundColor: componentColour, color: textColour, minHeight: "100vh" }}>
+    <div
+      style={{
+        display: "flex",
+        backgroundColor: componentColour,
+        color: textColour,
+        minHeight: "100vh",
+      }}
+    >
       <div className="sidebar-container">
         <Sidebar style={{ backgroundColor: componentColour }}>
           <Menu>
@@ -140,11 +140,20 @@ export default function Layout({ children, messages }) {
               </span>
             </MenuItem>
             <MenuItem onClick={() => navigate("/savings")}> Savings </MenuItem>
-            <MenuItem onClick={() => navigate("/insights")}> Insights </MenuItem>
-            <MenuItem onClick={() => navigate("/payments")}> Payments </MenuItem>
+            <MenuItem onClick={() => navigate("/insights")}>
+              {" "}
+              Insights{" "}
+            </MenuItem>
+            <MenuItem onClick={() => navigate("/payments")}>
+              {" "}
+              Payments{" "}
+            </MenuItem>
             <br />
             <Divider />
-            <MenuItem onClick={() => navigate("/settings")}> Settings </MenuItem>
+            <MenuItem onClick={() => navigate("/settings")}>
+              {" "}
+              Settings{" "}
+            </MenuItem>
             <div className="menu-spacer">
               <Divider />
               <MenuItem> Help </MenuItem>
@@ -172,26 +181,26 @@ export default function Layout({ children, messages }) {
 
       <div style={{ flex: 1, padding: "20px" }}>{renderContent()}</div>
 
-      {(notificationType === 'default' || notificationType === 'flashing') && (
-        <div
-          style={{
-            position: "fixed",
-            top: "20px",
-            right: "20px",
-            padding: "10px 20px",
-            backgroundColor: "#ffcc00",
-            color: textColour,
-            borderRadius: "12px",
-            boxShadow: "0 5px 15px rgba(0, 0, 0, 0.1)",
-            fontWeight: "bold",
-            display: flashing ? "none" : "block",
-          }}
-        >
-          You have new messages!
-        </div>
-      )}
+      {!notificationDismissed && (
+  <div
+    style={{
+      position: "fixed",
+      top: "20px",
+      right: "20px",
+      padding: "10px 20px",
+      backgroundColor: "#ffcc00",
+      color: textColour,
+      borderRadius: "12px",
+      boxShadow: "0 5px 15px rgba(0, 0, 0, 0.1)",
+      fontWeight: "bold",
+      display: flashing ? "none" : "block",
+    }}
+  >
+    You have new messages!
+  </div>
+)}
 
-      {internalShowModal && notificationType === 'modal' && (
+      {internalShowModal && notificationType === "modal" && (
         <div
           style={{
             position: "fixed",

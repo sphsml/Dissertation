@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from "react";
-import { motion } from "framer-motion";
 import axios from "axios";
 import './components.css';
+import { useNavigate } from "react-router-dom";
 import { useCustomCursor } from "../utils/useCustomCursor";
 import CustomCursor from "../utils/CustomCursor";
 
 
 const HISetup = () => {
+  const navigate = useNavigate();
   const [notification_type, setnotification_type] = useState("default");
   const [text_size, setTextSize] = useState("medium");
   const [simple_english, setSimpleEnglish] = useState(false);
@@ -42,6 +43,8 @@ const HISetup = () => {
       } catch (error) {
         console.error("Error saving preferences:", error);
       }
+
+      navigate("/Home");
   };
 
   const textSizeMap = {

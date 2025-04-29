@@ -39,7 +39,7 @@ const SignUp = () => {
           navigate("/VISetup");
         } else if (response.status === 201 && formData.accessibility === "hi") {
           navigate("/HISetup");
-        } else if (response.status === 201 && formData.accessibiilty === "nd") {
+        } else if (response.status === 201 && formData.accessibility === "nd") {
           navigate("/NDSetup");
         }
       }

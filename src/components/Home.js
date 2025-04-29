@@ -101,6 +101,10 @@ export default function Home() {
     }
   }, [showCustomCursor]);
 
+  useEffect(() => {
+    speak("Welcome back, Oliver. Here are the latest statistics on your investments. For further information, press the down arrow into the sections.");
+  }, []);
+
   const navigate = useNavigate();
 
   const data = [
@@ -160,7 +164,6 @@ export default function Home() {
       });
     } else if (event.key === "ArrowDown") {
       setCurrentSectionIndex((prevIndex) => {
-        console.log(prevIndex);
         if (prevIndex > 0) {
           speak(subsections[prevIndex - 1]);
         }

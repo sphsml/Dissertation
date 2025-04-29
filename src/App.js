@@ -1,7 +1,7 @@
 import React from 'react'
 import 'bootstrap'
 import './App.css'
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import LoginAttempt from './components/Login'
 import SignUp from './components/signup'
 import Home from './components/Home'
