@@ -139,6 +139,30 @@ app.post("/login", (req, res) => {
   });
 });
 
+app.post("/verify-password", (req, res) => {
+  const { email, password } = req.body;
+
+  const sql = "SELECT * FROM Users WHERE email = ?";
+  db.query(sql, [email], async (err, result) => {
+    if (err) {
+      return res
+        .status(500)
+        .json({ message: "An error occurred while processing your request." });
+    }
+    if (result.length === 0) {
+      return res.status(401).json({ message: "Invalid email or password." });
+    }
+    const storedHashedPassword = result[0].password;
+    const passwordMatch = await bcrypt.compare(password, storedHashedPassword);
+
+    if (!passwordMatch) {
+      return res.status(401).json({ message: "Invalid email or password." });
+    }
+
+    res.status(200).json({ message: "Password verified successfully." });
+  });
+});
+
 function hi_user(email, accessibility, callback) {
   const table = tableMap[accessibility];
   if (!table) {
@@ -328,7 +352,8 @@ app.post("/hi_view", async (req, res) => {
 app.post("/nd_view", async (req, res) => {
   try {
     const email = req.cookies.userEmail;
-    const { notification_type,
+    const {
+      notification_type,
       text_size,
       custom_cursor,
       bionic_reading,
@@ -338,7 +363,8 @@ app.post("/nd_view", async (req, res) => {
       rate,
       volume,
       text_colour,
-      component_colour } = req.body;
+      component_colour,
+    } = req.body;
 
     if (!email) {
       return res.status(401).json({ message: "Not authenticated" });
@@ -361,25 +387,9 @@ app.post("/nd_view", async (req, res) => {
 
     db.query(
       sql,
-      [email, notification_type,
-        text_size,
-        custom_cursor,
-        bionic_reading,
-        text_to_speech,
-        voice,
-        pitch,
-        rate,
-        volume,
-        text_colour,
-        component_colour],
-      (err) => {
-        if (err) {
-          console.error("Database error:", err);
-          return res.status(500).json({ message: "Error saving ND preferences" });
-        }
-
-        const accessibilityData = {
-          notification_type,
+      [
+        email,
+        notification_type,
         text_size,
         custom_cursor,
         bionic_reading,
@@ -390,6 +400,27 @@ app.post("/nd_view", async (req, res) => {
         volume,
         text_colour,
         component_colour,
+      ],
+      (err) => {
+        if (err) {
+          console.error("Database error:", err);
+          return res
+            .status(500)
+            .json({ message: "Error saving ND preferences" });
+        }
+
+        const accessibilityData = {
+          notification_type,
+          text_size,
+          custom_cursor,
+          bionic_reading,
+          text_to_speech,
+          voice,
+          pitch,
+          rate,
+          volume,
+          text_colour,
+          component_colour,
         };
 
         res.cookie(
@@ -405,7 +436,9 @@ app.post("/nd_view", async (req, res) => {
           }
         );
 
-        return res.status(201).json({ message: "ND preferences saved successfully" });
+        return res
+          .status(201)
+          .json({ message: "ND preferences saved successfully" });
       }
     );
   } catch (error) {
