@@ -69,7 +69,7 @@ const accessibility = [
 export default function Home() {
   const accessibilitySettings = useAccessibilitySettings();
   const [mousePosition, setMousePosition] = useState({x:0, y:0});
-  const showCustomCursor = accessibilitySettings?.custom_cursor;
+  const showCustomCursor = accessibilitySettings?.data?.custom_cursor;
   
   useEffect(() => {
     if (typeof window !== "undefined") {

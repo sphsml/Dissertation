@@ -21,7 +21,7 @@ export default function useAccessibilitySettings() {
       try {
         const decoded = decodeURIComponent(cookies.accessibility);
         const accessibilityData = JSON.parse(decoded);
-        setSettings(accessibilityData?.data || {}); // Only set the `data` part
+        setSettings(accessibilityData || {}); // Only set the `data` part
       } catch (error) {
         console.error("Error parsing accessibility cookie:", error);
         setSettings({});

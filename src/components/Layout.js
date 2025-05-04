@@ -18,11 +18,11 @@ export default function Layout({ children, messages }) {
   const [textColour, setTextColour] = useState("#000000"); // Default: black text
   const [componentColour, setComponentColour] = useState("#ffffff"); // Default: white background
   const [notificationDismissed, setNotificationDismissed] = useState(false);
-  const showCustomCursor = accessibilitySettings?.custom_cursor;
-  const textSize = accessibilitySettings?.text_size || "medium";
+  const showCustomCursor = accessibilitySettings?.data?.custom_cursor;
+  const textSize = accessibilitySettings?.data?.text_size || "medium";
   const notificationType =
-    accessibilitySettings?.notification_type || "default";
-  const bionic_reading = accessibilitySettings?.bionic_reading;
+    accessibilitySettings?.data?.notification_type || "default";
+  const bionic_reading = accessibilitySettings?.data?.bionic_reading;
 
   useEffect(() => {
     const handleMouseMove = (e) => {
@@ -68,8 +68,8 @@ export default function Layout({ children, messages }) {
 
   // Read colours from cookies on mount
   useEffect(() => {
-    const textColorFromCookie = accessibilitySettings?.textColour;
-    const componentColorFromCookie = accessibilitySettings?.componentColour;
+    const textColorFromCookie = accessibilitySettings?.data?.textColour;
+    const componentColorFromCookie = accessibilitySettings?.data?.componentColour;
 
     if (textColorFromCookie) {
       setTextColour(decodeURIComponent(textColorFromCookie));

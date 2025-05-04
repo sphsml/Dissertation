@@ -54,7 +54,7 @@ export default function Insights() {
 
   // State to track if we need simple English
     const accessibilitySettings = useAccessibilitySettings();
-  const simpleEnglish = accessibilitySettings?.simple_english;
+  const simpleEnglish = accessibilitySettings?.data?.simple_english;
 
   useEffect(() => {
     const messages = [
