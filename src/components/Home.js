@@ -70,7 +70,8 @@ export default function Home() {
   const accessibilitySettings = useAccessibilitySettings();
   const [mousePosition, setMousePosition] = useState({x:0, y:0});
   const showCustomCursor = accessibilitySettings?.data?.custom_cursor;
-  
+  const [name, setName] = useState("User");
+
   useEffect(() => {
     if (typeof window !== "undefined") {
       window.speechSynthesis.onvoiceschanged = () => {
@@ -99,10 +100,26 @@ export default function Home() {
       window.removeEventListener("mousemove", handleMouseMove);
       document.body.style.cursor = "auto";
     }
-  }, [showCustomCursor]);
+  }, [showCustomCursor, setMousePosition]);
 
   useEffect(() => {
-    speak("Welcome back, Oliver. Here are the latest statistics on your investments. For further information, press the down arrow into the sections.");
+    const parseCookies = () => {
+      return document.cookie.split(";").reduce((acc, cookie) => {
+        const separatorIndex = cookie.indexOf("=");
+        if (separatorIndex === -1) return acc;
+        const name = cookie.slice(0, separatorIndex).trim();
+        const value = cookie.slice(separatorIndex + 1).trim();
+        acc[name] = value;
+        return acc;
+      }, {});
+    };
+
+    const cookies = parseCookies();
+
+    if(cookies.name) {
+      setName(cookies.name);
+      speak(`Welcome back, ${cookies.name}. Here are the latest statistics on your investments. For further information, press the down arrow into the sections.`);
+    }
   }, []);
 
   const navigate = useNavigate();
@@ -124,7 +141,7 @@ export default function Home() {
   ];
 
   const sections = [
-    "Welcome back, Oliver. Here are the latest statistics on your investments. For further information, press the down arrow into the sections.",
+    `Welcome back, ${name}. Here are the latest statistics on your investments. For further information, press the down arrow into the sections.`,
     "Balance details.",
     "Investment performance data.",
     "Latest Investment Headlines.",
@@ -250,7 +267,7 @@ export default function Home() {
       <div style={{ display: "flex" }}>
         <div className="main-home" style={{ flex: 2 }}>
           <div className="bordered-div">
-            <h1>Welcome back, Oliver</h1>
+            <h1>Welcome back, {name}</h1>
             <p>Here are the latest statistics on your investments</p>
           </div>
 

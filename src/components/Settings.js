@@ -15,7 +15,7 @@ const Settings = () => {
   const [isPaused, setIsPaused] = useState(false);
   const [utterance, setUtterance] = useState(null);
   const accessibilitySettings = useAccessibilitySettings();
-  const [accessibilityType, setAccessibilityType] = useState("nd");
+  const [accessibilityType, setAccessibilityType] = useState("vi");
 
   const [notificationType, setNotificationType] = useState("default");
   const [textSize, setTextSize] = useState("medium");
@@ -36,11 +36,10 @@ const Settings = () => {
   ];
 
   useEffect(() => {
-    if (accessibilitySettings.accessibility) {
+    if (accessibilitySettings?.type) {
       try {
-        const decoded = decodeURIComponent(accessibilitySettings.accessibility);
-        const data = JSON.parse(decoded);
-        if (data.type) setAccessibilityType(data.type);
+        console.log(accessibilitySettings?.type);
+        setAccessibilityType(accessibilitySettings?.type);
       } catch (e) {
         console.error("Failed to parse accessibility cookie:", e);
       }
@@ -74,7 +73,7 @@ const Settings = () => {
       synth.cancel();
       synth.speak(u);
     }
-  }, [currentTextIndex, voice, pitch, rate, volume, textList]);
+  }, []);
 
   const speak = () => {
     if (!utterance) return;
@@ -210,8 +209,8 @@ const Settings = () => {
 
       <h2>Accessibility Preferences</h2>
 
-      {!accessibilitySettings.accessibility && (
-        <p>No accessibility preferences detected.</p>
+      {!accessibilitySettings && (
+        <p>No accessibility preferences detected. </p>
       )}
 
       {accessibilityType === "hi" && (

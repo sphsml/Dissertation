@@ -56,6 +56,12 @@ app.post("/login", (req, res) => {
       maxAge: 24 * 60 * 60 * 1000,
     });
 
+    res.cookie("name", result[0].firstName, {
+      httpOnly: false,
+      secure: false,
+      maxAge: 24 * 60 * 60 * 1000,
+    });
+
     if (result[0].accessibility) {
       const accessibility = result[0].accessibility;
 
@@ -238,6 +244,11 @@ app.post("/register", async (req, res) => {
           return res.status(500).json({ message: "Error registering user" });
         }
         res.cookie("userEmail", email, {
+          httpOnly: false,
+          secure: false,
+          maxAge: 24 * 60 * 60 * 1000,
+        });
+        res.cookie("name", firstName, {
           httpOnly: false,
           secure: false,
           maxAge: 24 * 60 * 60 * 1000,
@@ -581,6 +592,7 @@ app.post("/update-settings", async (req, res) => {
 app.post("/logout", (req, res) => {
   res.clearCookie("userEmail");
   res.clearCookie("accessibility");
+  res.clearCookie("name");
   return res.status(200).json({ message: "Logged out successfully" });
 });
 

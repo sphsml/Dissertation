@@ -68,16 +68,17 @@ export default function Layout({ children, messages }) {
 
   // Read colours from cookies on mount
   useEffect(() => {
-    const textColorFromCookie = accessibilitySettings?.data?.textColour;
-    const componentColorFromCookie = accessibilitySettings?.data?.componentColour;
+    if (!accessibilitySettings || !accessibilitySettings.data) return;
+    const textColourFromCookie = accessibilitySettings?.data?.text_colour;
+    const componentColourFromCookie = accessibilitySettings?.data?.component_colour;
 
-    if (textColorFromCookie) {
-      setTextColour(decodeURIComponent(textColorFromCookie));
+    if (textColourFromCookie) {
+      setTextColour(decodeURIComponent(textColourFromCookie) || '#454545');
     }
-    if (componentColorFromCookie) {
-      setComponentColour(decodeURIComponent(componentColorFromCookie));
+    if (componentColourFromCookie) {
+      setComponentColour(decodeURIComponent(componentColourFromCookie) || '#5c5c5c');
     }
-  }, []);
+  }, [accessibilitySettings]);
 
   const handleMessagesClick = () => {
     setNotificationDismissed(true);
@@ -94,10 +95,30 @@ export default function Layout({ children, messages }) {
     return () => clearInterval(interval);
   }, [notificationType, notificationDismissed]);
 
+  const applyBionicReading = (node) => {
+    if (typeof node === "string") {
+      return <span dangerouslySetInnerHTML={{ __html: textVide(node) }} />;
+    }
+  
+    if (Array.isArray(node)) {
+      return node.map((child, index) => (
+        <React.Fragment key={index}>{applyBionicReading(child)}</React.Fragment>
+      ));
+    }
+  
+    if (React.isValidElement(node)) {
+      return React.cloneElement(node, {
+        ...node.props,
+        children: applyBionicReading(node.props.children),
+      });
+    }
+  
+    return node;
+  };
+
   const renderContent = () => {
     if (bionic_reading) {
-      const bionicHTML = textVide(children, {});
-      return <div dangerouslySetInnerHTML={{ __html: bionicHTML }} />;
+      return <>{applyBionicReading(children)}</>;
     }
     return children;
   };
