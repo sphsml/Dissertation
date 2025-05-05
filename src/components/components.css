@@ -52,3 +52,7 @@
     pointer-events: none;
     z-index: 9999;
   }
+
+  .link-list li {
+    margin-bottom: 12px;
+  }

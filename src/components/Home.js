@@ -212,10 +212,12 @@ export default function Home() {
         <Sidebar>
           <Menu>
             <>
-              <h1>@One4All</h1>
+            <MenuItem disabled style={{ cursor: "default", fontWeight: "bold", color: "black" }}>
+  @One4All
+</MenuItem>
               <br />
               <SubMenu label="Overview">
-                <MenuItem onClick={() => navigate("/home")}> Summary </MenuItem>
+                <MenuItem role="button" tabIndex={0} onClick={() => navigate("/home")}> Summary </MenuItem>
                 <MenuItem> Custom View </MenuItem>
               </SubMenu>
               <br />
@@ -273,7 +275,7 @@ export default function Home() {
 
           <div className="bordered-div" style={{ flex: 3, minWidth: "600px" }}>
             <h1>Total balance</h1>
-            <h3>£9,328.55</h3>
+            <h2>£9,328.55</h2>
             <p>£360 from investments</p>
           </div>
 
@@ -295,9 +297,9 @@ export default function Home() {
             <h2 className="text-xl font-bold mb-4">
               Latest Investment Headlines
             </h2>
-            <ul className="list-disc pl-5">
+            <ul className="link-list" aria-label="Latest investment headlines">
               {headlines.map((headline, index) => (
-                <li key={index} className="mb-2">
+                <li key={index} className="mb-3">
                   <a
                     href={headline.url}
                     target="_blank"
@@ -316,9 +318,9 @@ export default function Home() {
             style={{ marginLeft: "20px", maxWidth: "70%" }}
           >
             <h1>Recent Headlines on Disability Inclusion in Finance</h1>
-            <ul>
+            <ul aria-label="Latest investment news" className="link-list">
               {accessibility.map((headline, index) => (
-                <li key={index}>
+                <li key={index}  className="mb-3">
                   <a
                     href={headline.link}
                     target="_blank"
@@ -358,7 +360,7 @@ export default function Home() {
             }}
           >
             <h2 style={{ marginBottom: "16px" }}>Messages</h2>
-            <ul style={{ listStyle: "disc", paddingLeft: "20px" }}>
+            <ul style={{ listStyle: "disc", paddingLeft: "20px" }} aria-label="Messages" className="link-list">
               {messages.map((msg, idx) => (
                 <li key={idx} style={{ marginBottom: "10px" }}>
                   {msg}
